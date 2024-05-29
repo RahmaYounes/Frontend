@@ -81,7 +81,7 @@ onMounted(() => {
 <style scoped>
 td,
 th {
-    border: 1px solid #ddd;
+    border: 1px solid #489662;
     padding: 8px;
 }
 
@@ -90,7 +90,7 @@ th {
     padding-bottom: 12px;
     text-align: left;
     background-color: #232623;
-    color: rgb(255, 255, 255);
+    color: rgb(183, 174, 174);
 }
 
 table {
@@ -105,7 +105,7 @@ table {
 }
 
 .pagination button {
-  background-color: #4CAF50;
+  background-color: #8b938b;
   color: white;
   border: none;
   border-radius: 4px;
@@ -116,11 +116,11 @@ table {
 }
 
 .pagination button:hover {
-  background-color: #45a049;
+  background-color: #2b2828;
 }
 
 .pagination button:disabled {
-  background-color: #cccccc;
+  background-color: #020202;
   cursor: not-allowed;
 }
 
