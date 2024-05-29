@@ -2,8 +2,7 @@
     <main>
         <div>
             <table>
-                <caption> Les produits - page {{data.infoPage.number + 1}} / {{ data.infoPage.totalPages}}</caption>
-                <caption>Liste des produits</caption>
+                <caption>Les produits - page {{ data.page.number + 1 }} / {{ data.page.totalPages }} </caption>
                 <tr>
                     <th>Nom</th>
                     <th>Prix</th>
@@ -11,111 +10,71 @@
                     <th>Commandés</th>
                 </tr>
                 <!-- Si le tableau des produits est vide -->
-                <tr v-if="!data.listeProduits">
+                <tr v-if="data.listeProduits.length === 0">
                     <td colspan="4">Veuillez patienter, chargement des produits...</td>
                 </tr>
-                <!-- Si le tableau des catégories n'est pas vide -->
-                <tr v-for="produit in data.listeProduits" :key="produit.code">
+                <!-- Si le tableau des produits n'est pas vide -->
+                <tr v-for="produit in data.listeProduits" :key="produit">
                     <td>{{ produit.nom }}</td>
                     <td>{{ produit.prixUnitaire }}</td>
                     <td>{{ produit.unitesEnStock }}</td>
                     <td>{{ produit.unitesCommandees }}</td>
                 </tr>
-                <tr>
-                    <td>
-                        <button @click="chargeProduit(data.links.first.href)">
-                            Premiere page
-                        </button>
-                    </td>
-                    <td>
-                        <button @click="chargeProduit(data.links.prev.href)">
-                            Page précédente
-                        </button>
-                    </td>
-                    <td>
-                        <button @click="chargeProduit(data.links.next.href)">
-                            Page suivante
-                        </button>
-                    </td>
-                    <td>
-                        <button @click="chargeProduit(data.links.last.href)">
-                            Dernière page
-                        </button>
-                    </td>
-                </tr>
             </table>
+            <div class="pagination">
+                <button @click="chargeProduits(0)">
+                    Début
+                </button>
+                <button @click="data.page.number + 1 > 1 ? chargeProduits(data.page.number - 1) : ''">
+                    Précédent
+                </button>
+                <button @click="data.page.number + 1 < data.page.totalPages ? chargeProduits(data.page.number + 1) : ''">
+                    Suivant
+                </button>
+                <button @click="chargeProduits(data.page.totalPages - 1)">
+                    Fin
+                </button>
+            </div>
         </div>
     </main>
 </template>
 
 <script setup>
-
 import { reactive, onMounted } from "vue";
-import { BACKEND, doAjaxRequest } from "../api";
-
-// Pour réinitialiser le formuaire
-const produitVide = {
-    nom: "",
-    prixUnitaire: "",
-    unitesEnStock: "",
-    unitesCommandees: ""
-};
+import { doAjaxRequest, APIError } from "../api";
 
 let data = reactive({
-    // Les données saisies dans le formulaire
-    formulaireProduit: { ...produitVide },
-    // La liste des catégories affichée sous forme de table
+    // La liste des produits affichée sous forme de table
     listeProduits: [],
-    links : {},
-    infoPage : {}
+    // Informations de la page 
+    page: {}
 });
 
-function chargeProduit(href) {
-    // Appel à l'API pour avoir la liste des catégories
-    // Trié par code, descendant
-    // Verbe HTTP GET par défaut
-    doAjaxRequest(href)
+function showError(error) {
+    console.log("Erreur : status %d", error.status)
+    console.log(error.body);
+    alert(error.message);
+}
+
+/**
+ * Appel à l'API pour avoir la liste des produits
+ * Enregistre les produits dans un tableau d'une page passée en paramètre
+ * Trié par nom, ascendant
+ * @param {number} nPage Numéro de la page 
+ */
+function chargeProduits(nPage) {
+    doAjaxRequest(`/api/produits?page=${nPage}&size=5&sort=nom,asc`)
         .then((json) => {
             data.listeProduits = json._embedded.produits;
-            data.links = json._links;
-            data.infoPage = json.page;
+            data.page = json.page;
         })
-        .catch((error) => alert(error.message));
+        .catch(showError);
 }
 
-function ajouteProduit() {
-    // Ajouter une catégorie avec les données du formulaire
-    const options = {
-        method: "POST", // Verbe HTTP POST pour ajouter un enregistrement
-        body: JSON.stringify(data.formulaireProduit),
-        headers: {
-            "Content-Type": "application/json",
-        },
-    };
-    doAjaxRequest(BACKEND + "/api/produits", options)
-        .then(() => {
-            // Réinitialiser le formulaire
-            data.formulaireProduit = { ...produitVide };
-            // Recharger la liste des catégories
-            chargeProduit();
-        })
-        .catch((error) => alert(error.message));
-}
-/**
- * Supprime une entité
- * @param entityRef l'URI de l'entité à supprimer
- */
-/*
-*function deleteEntity(entityRef) {
-*    doAjaxRequest(entityRef, { method: "DELETE" })
-*        .then(chargeCategories)
-*        .catch((error) => alert(error.message));
-}
-*/
-
-// A l'affichage du composant, on affiche la liste
-onMounted(() => chargeProduit(BACKEND + "/api/produits?page=0&size=5"));
-
+// A l'affichage du composant, on affiche la liste des produits de la 1ère page
+onMounted(() => {
+    chargeProduits(0);
+});
 </script>
 
 
@@ -126,7 +85,6 @@ th {
     padding: 8px;
 }
 
-
 th {
     padding-top: 12px;
     padding-bottom: 12px;
@@ -134,4 +92,46 @@ th {
     background-color: #232623;
     color: rgb(255, 255, 255);
 }
+
+table {
+  margin-top: 20px;
+  border-collapse: collapse;
+  width: 100%;
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.pagination button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  margin: 0 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.pagination button:hover {
+  background-color: #45a049;
+}
+
+.pagination button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.pagination button:first-child,
+.pagination button:last-child {
+  background-color: #555555;
+}
+
+.pagination button:first-child:hover,
+.pagination button:last-child:hover {
+  background-color: #4d4d4d;
+}
+
 </style>
