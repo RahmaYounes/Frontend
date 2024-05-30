@@ -81,7 +81,7 @@ onMounted(() => {
 <style scoped>
 td,
 th {
-    border: 1px solid #489662;
+    border: 1px solid #9b9a98;
     padding: 8px;
 }
 
